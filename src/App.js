@@ -1,49 +1,50 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Router, Switch, Route, Link } from "react-router-dom";
-
+import React, { Component } from "react";
+import { Switch, Route, Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
-import Login from "./components/Login";
-import Register from "./components/Register";
-import Home from "./components/Home";
-import Profile from "./components/Profile";
-import BoardUser from "./components/BoardUser";
-import BoardModerator from "./components/BoardModerator";
-import BoardAdmin from "./components/BoardAdmin";
+import AuthService from "./services/auth.service";
 
-import { logout } from "./actions/auth";
-import { clearMessage } from "./actions/message";
+import Login from "./components/login.component";
+import Register from "./components/register.component";
+import Home from "./components/home.component";
+import Profile from "./components/profile.component";
+import BoardUser from "./components/board-user.component";
+import BoardModerator from "./components/board-moderator.component";
+import BoardAdmin from "./components/board-admin.component";
 
-import { history } from "./helpers/history";
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.logOut = this.logOut.bind(this);
 
-const App = () => {
-  const [showModeratorBoard, setShowModeratorBoard] = useState(false);
-  const [showAdminBoard, setShowAdminBoard] = useState(false);
+    this.state = {
+      showModeratorBoard: false,
+      showAdminBoard: false,
+      currentUser: undefined
+    };
+  }
 
-  const { user: currentUser } = useSelector(state => state.auth);
-  const dispatch = useDispatch();
+  componentDidMount() {
+    const user = AuthService.getCurrentUser();
 
-  useEffect(() => {
-    history.listen(location => {
-      dispatch(clearMessage()); // clear message when changing location
-    });
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (currentUser) {
-      setShowModeratorBoard(currentUser.roles.includes("ROLE_MODERATOR"));
-      setShowAdminBoard(currentUser.roles.includes("ROLE_ADMIN"));
+    if (user) {
+      this.setState({
+        currentUser: user,
+        showModeratorBoard: user.roles.includes("ROLE_MODERATOR"),
+        showAdminBoard: user.roles.includes("ROLE_ADMIN")
+      });
     }
-  }, [currentUser]);
+  }
 
-  const logOut = () => {
-    dispatch(logout());
-  };
+  logOut() {
+    AuthService.logout();
+  }
 
-  return (
-    <Router history={history}>
+  render() {
+    const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
+
+    return (
       <div>
         <nav className="navbar navbar-expand navbar-dark bg-dark">
           <Link to={"/"} className="navbar-brand">
@@ -89,7 +90,7 @@ const App = () => {
                 </Link>
               </li>
               <li className="nav-item">
-                <a href="/login" className="nav-link" onClick={logOut}>
+                <a href="/login" className="nav-link" onClick={this.logOut}>
                   LogOut
                 </a>
               </li>
@@ -123,8 +124,8 @@ const App = () => {
           </Switch>
         </div>
       </div>
-    </Router>
-  );
-};
+    );
+  }
+}
 
 export default App;
